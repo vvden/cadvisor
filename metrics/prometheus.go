@@ -1210,6 +1210,17 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
 
 		if cont.Spec.HasCpu {
+			// begin expose total cpu on machine label patch
+	    machineInfo, err := c.infoProvider.GetMachineInfo()
+	    if err != nil {
+	            c.errors.Set(1)
+	            glog.Warningf("Couldn't get machine info: %s", err)
+	            return
+	    }
+	    desc = prometheus.NewDesc("container_total_cpus_on_machine", "Total cores on machine for this container.", labels, nil)
+	    ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(machineInfo.NumCores), values...)
+			// end expose total cpu on machine label patch
+
 			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
 			if cont.Spec.Cpu.Quota != 0 {
